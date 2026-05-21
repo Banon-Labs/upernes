@@ -13,7 +13,15 @@ This repository is a fork of `mandraga/upernes`, a NES-to-SNES ROM recompilation
   5. Validate broader MMC3 behavior with `Mega Man 4 (U).nes`, `Mega Man 5 (U).nes`, and `Mega Man 6 (U).nes`.
   6. Then attempt `Crystalis.nes` as a higher-risk MMC3 + battery/SRAM target.
 - Do not remove mapper/header checks just to get farther; unsupported mapper work must add real mapper semantics and tests/diagnostics.
-- Use Docker as the default reproducible toolchain path unless local tool availability is explicitly being improved.
+
+## Docker-first workflow
+
+- Use Docker for build, conversion, dependency probing, and validation by default.
+- Do not spend effort installing or relying on host-local C++/assembler dependencies unless the task is explicitly about improving local non-Docker setup.
+- Treat the Docker image as the authoritative reproducible toolchain for this fork.
+- When changing build/conversion behavior, validate through Docker before claiming completion.
+- Because this repo's normal workflow is Docker-based, prefer background/asynchronous subagents for Docker-backed investigation, validation, or longer-running mapper experiments when delegation is useful and safe. Keep the parent session responsible for final decisions, Beads writes, commits, and user-facing conclusions.
+- Do not use background subagents to perform high-volume Beads writes or authority-sensitive mutations; use them for isolated read-only analysis, independent validation, or implementation shards with clear ownership and review.
 
 ## Build and conversion quick reference
 
