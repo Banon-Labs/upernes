@@ -1,84 +1,59 @@
 # Agent Instructions
 
-This project uses **bd** (beads) for issue tracking. Run `bd prime` for full workflow context.
+This repository is a fork of `mandraga/upernes`, a NES-to-SNES ROM recompilation experiment. The current strategic goal is to expand mapper support incrementally while preserving a working baseline.
 
-## Quick Reference
+## Project direction
+
+- Treat mapper support as an incremental platform effort, not a one-off game hack.
+- Preferred roadmap:
+  1. Baseline mapper-0 conversion with `Super Mario Bros.` / existing test ROMs.
+  2. Add mapper 2 / UxROM using `Mega Man (U).nes` as the representative target.
+  3. Add mapper 1 / MMC1 using `Mega Man 2 (U).nes`.
+  4. Add mapper 4 / MMC3 using `Mega Man 3 (U) [!].nes` first.
+  5. Validate broader MMC3 behavior with `Mega Man 4 (U).nes`, `Mega Man 5 (U).nes`, and `Mega Man 6 (U).nes`.
+  6. Then attempt `Crystalis.nes` as a higher-risk MMC3 + battery/SRAM target.
+- Do not remove mapper/header checks just to get farther; unsupported mapper work must add real mapper semantics and tests/diagnostics.
+- Use Docker as the default reproducible toolchain path unless local tool availability is explicitly being improved.
+
+## Build and conversion quick reference
 
 ```bash
-bd ready              # Find available work
-bd show <id>          # View issue details
-bd update <id> --claim  # Claim work atomically
-bd close <id>         # Complete work
-bd dolt push          # Push beads data to remote
+# Build Docker image when needed
+cd docker && ./init_docker.sh
+
+# Convert a ROM through the Docker toolchain from the repo root
+docker run --rm --user "$(id -u):$(id -g)" \
+  -v "$PWD:/opt/workspace" \
+  -v /mnt/y/Emulation/ROMs/NES:/roms:ro \
+  -w /opt/workspace \
+  upernes_image \
+  bash -lc 'bash ./conversion.sh "/roms/Super Mario Bros. (JU) (PRG0) [!].nes"'
 ```
 
-## Non-Interactive Shell Commands
-
-**ALWAYS use non-interactive flags** with file operations to avoid hanging on confirmation prompts.
-
-Shell commands like `cp`, `mv`, and `rm` may be aliased to include `-i` (interactive) mode on some systems, causing the agent to hang indefinitely waiting for y/n input.
-
-**Use these forms instead:**
-```bash
-# Force overwrite without prompting
-cp -f source dest           # NOT: cp source dest
-mv -f source dest           # NOT: mv source dest
-rm -f file                  # NOT: rm file
-
-# For recursive operations
-rm -rf directory            # NOT: rm -r directory
-cp -rf source dest          # NOT: cp -r source dest
-```
-
-**Other commands that may prompt:**
-- `scp` - use `-o BatchMode=yes` for non-interactive
-- `ssh` - use `-o BatchMode=yes` to fail instead of prompting
-- `apt-get` - use `-y` flag
-- `brew` - use `HOMEBREW_NO_AUTO_UPDATE=1` env var
-
-<!-- BEGIN BEADS INTEGRATION v:1 profile:minimal hash:ca08a54f -->
 ## Beads Issue Tracker
 
-This project uses **bd (beads)** for issue tracking. Run `bd prime` to see full workflow context and commands.
+This project uses **bd (beads)** for issue tracking. Use `bd` for all task tracking; do not create markdown TODO lists.
 
-### Quick Reference
+### Quick reference
 
 ```bash
-bd ready              # Find available work
-bd show <id>          # View issue details
-bd update <id> --claim  # Claim work
-bd close <id>         # Complete work
+bd ready --json
+bd show <id> --json
+bd update <id> --status in_progress --json
+bd close <id> --reason "Completed" --json
 ```
 
-### Rules
+## Workspace policy
 
-- Use `bd` for ALL task tracking — do NOT use TodoWrite, TaskCreate, or markdown TODO lists
-- Run `bd prime` for detailed command reference and session close protocol
-- Use `bd remember` for persistent knowledge — do NOT use MEMORY.md files
+- The workspace-level `~/projects/AGENTS.md` remains binding.
+- Do not use `git push` unless the user explicitly authorizes it for the current task. Beads/Dolt sync is separate from git push.
+- Do not run bare `bd dolt pull`; use the workspace-approved Beads sync sequence when syncing is required.
+- Before claiming completion for script/tooling changes, run the relevant workspace smoke tests required by `~/projects/AGENTS.md`.
 
-## Session Completion
+## Session completion
 
-**When ending a work session**, you MUST complete ALL steps below. Work is NOT complete until `git push` succeeds.
-
-**MANDATORY WORKFLOW:**
-
-1. **File issues for remaining work** - Create issues for anything that needs follow-up
-2. **Run quality gates** (if code changed) - Tests, linters, builds
-3. **Update issue status** - Close finished work, update in-progress items
-4. **PUSH TO REMOTE** - This is MANDATORY:
-   ```bash
-   git pull --rebase
-   bd dolt push
-   git push
-   git status  # MUST show "up to date with origin"
-   ```
-5. **Clean up** - Clear stashes, prune remote branches
-6. **Verify** - All changes committed AND pushed
-7. **Hand off** - Provide context for next session
-
-**CRITICAL RULES:**
-- Work is NOT complete until `git push` succeeds
-- NEVER stop before pushing - that leaves work stranded locally
-- NEVER say "ready to push when you are" - YOU must push
-- If push fails, resolve and retry until it succeeds
-<!-- END BEADS INTEGRATION -->
+1. File/update Beads issues for remaining work.
+2. Run relevant quality gates for changed code/scripts.
+3. Commit local work when appropriate.
+4. Sync Beads only with the workspace-approved sequence when needed.
+5. Report concise handoff context and validation evidence.
